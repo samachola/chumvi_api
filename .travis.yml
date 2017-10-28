@@ -10,3 +10,14 @@ script:
 
 after_sucess:
   - "coveralls"
+
+# whitelist   
+branches:
+  only:
+    - master
+
+notifications:  # specify build notifications
+  email:
+    - sam.achola@live.com
+on_success: change
+on_failure: always
