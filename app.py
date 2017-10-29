@@ -184,10 +184,90 @@ def delete_category(current_user, category_id):
     db.session.commit()
     return jsonify({'message': 'Category successfully deleted', 'status': True})
     
+
+@app.route('/recipe', methods=['POST'])
+@token_required
+def add_recipe(current_user):
+
+    data = request.get_json()
+
+    if not data or not data['title'] or not data['ingredients'] or not data['steps'] or not data['category_id']:
+        return jsonify({'message': 'all recipe fields are required', 'status': False})
+
+    recipe = Recipe(title=data['title'], ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
+    db.session.add(recipe)
+    db.session.commit()
+    return jsonify({'message': 'Successfully added new Recipe', 'status': True})
+
+
+@app.route('/recipe', methods=['GET'])
+@token_required
+def get_recipes(current_user):
+
+    output = []
     
+    recipes = Recipe.query.all()
+    if not recipes:
+        return jsonify({'message': 'No recipes available'})
+    for recipe in recipes:
+        recipee = {}
+        recipee['id'] = recipe.id
+        recipee['title'] = recipe.title
+        recipee['ingredients'] = recipe.ingredients
+        recipee['steps'] = recipe.steps
+        recipee['category_id'] = recipe.category_id
+        recipee['user_id'] = recipe.user_id
+        output.append(recipee)
+
+    return jsonify({'recipes': output})
 
 
-  
+@app.route('/recipe/<recipe_id>', methods=['GET'])
+@token_required
+def get_recipe(current_user, recipe_id):
+    recipe = Recipe.query.filter_by(id=recipe_id).first()
+
+    if not recipe:
+        return jsonify({'message': 'Recipe is not available', 'status': False})
+
+    recipee = {}
+    recipee['id'] = recipe.id
+    recipee['title'] = recipe.title
+    recipee['ingredients'] = recipe.ingredients
+    recipee['steps'] = recipe.steps
+    recipee['category_id'] = recipe.category_id
+    recipee['user_id'] = recipe.user_id
+
+    return jsonify({'recipe': recipee})
+
+@app.route('/recipe/<recipe_id>', methods=['PUT'])
+@token_required
+def update_recipe(current_user, recipe_id):
+    data = request.get_json()
+    recipe = Recipe.query.filter_by(id=recipe_id).first()
+
+    if not recipe:
+        return jsonify({'message': 'Recipe is not available', 'status': False})
+
+    recipe.title = data['title']
+    recipe.ingredients = data['ingredients']
+    recipe.step = data['steps']
+    recipe.category_id = data['category_id']
+
+    db.session.commit()
+    return jsonify({'message': 'Successfully updated recipe', 'status': True})
+
+@app.route('/recipe/<recipe_id>', methods=['DELETE'])
+@token_required
+def delete_recipe(current_user, recipe_id):
+    recipe = Recipe.query.filter_by(id=recipe_id).first()
+
+    if not recipe:
+        return jsonify({'message': 'Recipe not found', 'status': False})
+
+    db.session.delete(recipe)
+    db.session.commit()
+    return jsonify({'message': 'Recipe deleted successfully', 'status': True})
 
 if __name__ == '__main__':
     app.run(debug=True)
