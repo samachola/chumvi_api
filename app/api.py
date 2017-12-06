@@ -179,13 +179,21 @@ def add_recipe(current_user):
 @app.route('/recipe', methods=['GET'])
 @token_required
 def get_recipes(current_user):
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 2))
+    q = str(request.args.get('q'))
 
     output = []
-    
-    recipes = Recipe.query.filter_by(user_id=current_user.id).all()
+
+    if q != None:
+        recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
+
+    else:
+        recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
+        
     if not recipes:
         return jsonify({'message': 'No recipes available'})
-    for recipe in recipes:
+    for recipe in recipes.items:
         recipee = {}
         recipee['id'] = recipe.id
         recipee['title'] = recipe.title
