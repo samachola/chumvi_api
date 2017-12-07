@@ -34,7 +34,6 @@ def token_required(f):
 @app.route('/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
-
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(username=data['username'], email=data['email'], admin=False, password=hashed_password)
     new_user.save()
@@ -62,8 +61,6 @@ def login():
 @app.route('/auth/logout', methods=['POST'])
 def logout():
     data = request.get_json()
-
-
     if not data:
         return jsonify({'message': 'something went wrong'})
 
@@ -127,6 +124,7 @@ def get_category(current_user, category_id):
     cat = {}
     cat['id'] = category.id
     cat['category_name'] = category.category_name
+    cat['category_description'] = category.category_description
 
     return jsonify({'category': cat})
 
@@ -144,6 +142,7 @@ def update_category(current_user, category_id):
         return jsonify({'message': 'category name missing', 'status': False})
 
     category.category_name = data['category_name']
+    category.category_description = data['category_description']
     db.session.commit()
     return jsonify({'message': 'Successfully updated category', 'status': True})
 
@@ -169,6 +168,8 @@ def add_recipe(current_user):
 
     if not data or not data['title'] or not data['ingredients'] or not data['steps'] or not data['category_id']:
         return jsonify({'message': 'all recipe fields are required', 'status': False})
+    if data['title'].isspace() or data['ingredients'].isspace() or data['steps'].isspace():
+        return jsonify({'message': 'all recipe fields are required', 'status': False})        
 
     recipe = Recipe(title=data['title'], ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
     recipe.save()
@@ -181,35 +182,45 @@ def add_recipe(current_user):
 def get_recipes(current_user):
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 2))
-    q = str(request.args.get('q'))
+    q = str(request.args.get('q','')).lower()
 
-    output = []
-
-    if q != None:
-        recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
-
-    else:
-        recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
-        
+    output = []    
+    recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
+           
     if not recipes:
         return jsonify({'message': 'No recipes available'})
-    for recipe in recipes.items:
-        recipee = {}
-        recipee['id'] = recipe.id
-        recipee['title'] = recipe.title
-        recipee['ingredients'] = recipe.ingredients
-        recipee['steps'] = recipe.steps
-        recipee['category_id'] = recipe.category_id
-        recipee['user_id'] = recipe.user_id
-        output.append(recipee)
-
-    return jsonify({'recipes': output})
+    if q:
+        for recipe in recipes.items: 
+            if q in recipe.title.lower() or q in recipe.ingredients.lower() or q in recipe.steps.lower() :  
+                recipee = {}
+                recipee['id'] = recipe.id
+                recipee['title'] = recipe.title
+                recipee['ingredients'] = recipe.ingredients
+                recipee['steps'] = recipe.steps
+                recipee['category_id'] = recipe.category_id
+                recipee['user_id'] = recipe.user_id
+                output.append(recipee)
+    else:
+        for recipe in recipes.items: 
+            recipee = {}
+            recipee['id'] = recipe.id
+            recipee['title'] = recipe.title
+            recipee['ingredients'] = recipe.ingredients
+            recipee['steps'] = recipe.steps
+            recipee['category_id'] = recipe.category_id
+            recipee['user_id'] = recipe.user_id
+            output.append(recipee)
+            
+    if output:
+        return jsonify({'recipes': output})
+    else:
+        return jsonify({"message": "No recipes found"})
 
 
 @app.route('/recipe/<recipe_id>', methods=['GET'])
 @token_required
 def get_recipe(current_user, recipe_id):
-    recipe = Recipe.query.filter_by(id=recipe_id).first()
+    recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
     if not recipe:
         return jsonify({'message': 'Recipe is not available', 'status': False})
@@ -228,10 +239,16 @@ def get_recipe(current_user, recipe_id):
 @token_required
 def update_recipe(current_user, recipe_id):
     data = request.get_json()
-    recipe = Recipe.query.filter_by(id=recipe_id).first()
+    recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
     if not recipe:
         return jsonify({'message': 'Recipe is not available', 'status': False})
+    if data['title'].isspace():
+        return jsonify({'message': 'Title is empty'})
+    if data['ingredients'].isspace():
+        return jsonify({'message': 'Recipe ingredients are required'})
+    if data['steps'].isspace():
+        return jsonify({'message': 'yo! we can\'t cook nothing!'})
 
     recipe.title = data['title']
     recipe.ingredients = data['ingredients']

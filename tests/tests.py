@@ -1,12 +1,19 @@
 from flask_testing import TestCase
 import app
-from app import app, db, User, Category, Recipe
+from app import app, db, models
 import unittest
 import json
 
-class BaseTestCase(unittest.TestCase):
+User = models.User
+Category = models.Category
+Recipe = models.Recipe
+
+
+    
+
+class ApiTestCase(unittest.TestCase):
     def create_app(self):
-        app.config.from_pyfile('testconf.cfg')
+        app.config.from_pyfile('testconf.py')
         return app
 
     def setUp(self):
@@ -16,7 +23,6 @@ class BaseTestCase(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-class ApiTestCase(BaseTestCase):
     def test_registration(self):
         # user = User(username="achola", email="sam.achola@live.com", password="123456")
         tester = app.test_client(self)
