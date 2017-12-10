@@ -5,6 +5,7 @@ import jwt
 import datetime
 from functools import wraps
 from app import app, db, models
+import re
 
 User = models.User
 Category = models.Category
@@ -34,6 +35,11 @@ def token_required(f):
 @app.route('/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
+
+    if not data['username'] or not data['email']:
+        return jsonify({"message": "All fields are required"})
+    if not check_mail(data['email']):
+        return jsonify({"message": "Please provide a valid email", "status": False})
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(username=data['username'], email=data['email'], admin=False, password=hashed_password)
     new_user.save()
@@ -85,7 +91,7 @@ def reset():
 @token_required
 def add_category(current_user):
     if not current_user:
-        return jsonify({'messsage': 'Permission required', 'status': False})
+        return jsonify({'message': 'Permission required', 'status': False})
 
     data = request.get_json()
     if not data or not data['category_name']:
@@ -184,7 +190,7 @@ def get_recipes(current_user):
     per_page = int(request.args.get('per_page', 2))
     q = str(request.args.get('q','')).lower()
 
-    output = []    
+    output = []
     recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
            
     if not recipes:
@@ -269,3 +275,11 @@ def delete_recipe(current_user, recipe_id):
     db.session.delete(recipe)
     db.session.commit()
     return jsonify({'message': 'Recipe deleted successfully', 'status': True})
+
+def check_mail(user_email):    
+    match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
+
+    if match == None:
+        return False
+    else:
+        return True
