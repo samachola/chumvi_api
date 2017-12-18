@@ -94,8 +94,10 @@ def add_category(current_user):
         return jsonify({'message': 'Permission required', 'status': False})
 
     data = request.get_json()
-    if not data or not data['category_name']:
+    if not data or not data['category_name'] or data['category_name'].isspace():
         return jsonify({'message': 'Category name is required', 'status': False})
+    if not data['category_description'] or data['category_description'].isspace():
+        return jsonify({'message': 'Category description is required', 'status': False})
 
     new_category = Category(category_name=data['category_name'], category_description=data['category_description'], user_id=current_user.id)
     new_category.save()
