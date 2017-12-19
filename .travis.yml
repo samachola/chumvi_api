@@ -10,7 +10,7 @@ services:
 
 before_script:
   - psql -c "create database testbd;" -U postgres
-  - psql -c "ALTER  postgres WITH PASSWORD 5454Support54;"
+  
 script:
   - nosetests
   - nosetests --with-coverage --cover-erase --cover-package=app --cover-package=tests
@@ -22,6 +22,7 @@ after_sucess:
 branches:
   only:
     - master
+    - develop
 
 notifications:  # specify build notifications
   email:
