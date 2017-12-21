@@ -6,6 +6,21 @@ import datetime
 from functools import wraps
 from app import app, db, models
 import re
+from flasgger import Swagger
+
+swagger = Swagger(app, 
+        template={
+            "consumes":[
+                "application/json"
+            ],
+            "produces":[
+                "application/json"
+            ],
+            "Accept":[
+                "application/json"
+            ]
+        }
+)
 
 User = models.User
 Category = models.Category
@@ -20,7 +35,7 @@ def token_required(f):
             token = request.headers['x-access-token']
 
         if not token:
-            return jsonify({'message': 'Access Token unavailable', "status": False})
+            return jsonify({'message': 'Access Token unavailable', "status": False}), 401
 
         try:
             data = jwt.decode(token, app.secret_key)
@@ -32,8 +47,47 @@ def token_required(f):
     return decorated
 
 
-@app.route('/auth/register', methods=['POST'])
+@app.route('/auth/register/', methods=['POST'])
 def register():
+    """ User Registration
+    Register a user
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: body
+        required: true
+        type: object
+        description: New user details
+        schema:
+          type: object
+          id: user
+          properties:
+            username:
+              type: string
+              default: achola
+            email:
+              type: string
+              default: sam.achola@live.com
+            password:
+              type: string
+              default: "123456"
+    responses:
+      200:
+        description: Registration Successful
+        schema:
+          properties:
+            username:
+              type: string
+              default: achola
+            email:
+              type: string
+              default: sam.achola@live.com
+            password:
+              type: string
+              default: "123456"
+    """
     data = request.get_json()
 
     if not data['username'] or not data['email']:
@@ -48,6 +102,42 @@ def register():
 
 @app.route('/auth/login', methods=['POST'])
 def login():
+    """ User Login
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: body
+        required: true
+        type: object
+        description: User details for login
+        schema:
+          id: user
+          type: object
+          properties:
+            email:
+              type: string
+              default: sam.achola@live.com
+            password:
+              type: string
+              default: "123456"
+    responses:
+      200:
+        description: Login successful
+        schema:
+          properties:
+            message:
+              type: string
+              default: Login successful
+            status:
+              type: boolean
+              default: true
+            token:
+              type: string
+              default: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNhbS5hY2hvbGFAbGl2ZS5jb20iLCJleHAiOjE1MTM5NDM5NDV9.r6Bo3dUTzcw5wogGSKVH7kewyP6pk-GPkeA66ElptjI"
+
+    """
     data = request.get_json()
 
     if not data or not data['email'] or not data['password']:
@@ -90,6 +180,47 @@ def reset():
 @app.route('/category', methods=['POST'])
 @token_required
 def add_category(current_user):
+    """Add recipe categories. 
+    ---
+    tags:
+      - Category
+    parameters:
+      - in: body
+        name: body
+        required: true
+        type: object
+        description: Add a new category
+        schema:
+          id: category
+          type: object
+          properties:
+            category_name:
+              type: string
+              default: Dessert
+            category_description:
+              type: string
+              default: Oh ye o' sweet tooth
+      - in: header
+        name: x-access-token
+        required: true
+        type: string
+        description: x-access-token
+        schema:
+          properties:
+            x-access-token:
+              type: string
+    responses:
+      200:
+        description: Succefully added new category
+        schema:
+          properties:
+            status:
+              type: boolean
+              default: true
+            message:
+               type: string
+               default: Succefully added new category      
+    """
     if not current_user:
         return jsonify({'message': 'Permission required', 'status': False})
 
@@ -108,6 +239,17 @@ def add_category(current_user):
 @app.route('/category', methods=['GET'])
 @token_required
 def get_categories(current_user):
+    """Get all user categories.
+    ---
+    tags:
+      - Category
+    parameters:
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+    """
     
     data = []
     categories = Category.query.filter_by(user_id=current_user.id).all()
@@ -123,6 +265,22 @@ def get_categories(current_user):
 @app.route('/category/<int:category_id>', methods=['GET'])
 @token_required
 def get_category(current_user, category_id):
+    """Get category by id.
+    ---
+    tags:
+      - Category
+    parameters:
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+      - in: path
+        name: category_id
+        type: integer
+        required: true
+        description: category id
+    """
     
     category = Category.query.filter_by(id=category_id).first()
 
@@ -140,9 +298,40 @@ def get_category(current_user, category_id):
 @app.route('/category/<category_id>', methods=['PUT'])
 @token_required
 def update_category(current_user, category_id):
+    """Update category by id.
+    ---
+    tags:
+      - Category
+    parameters:
+      - in: body
+        name: body
+        required: true
+        type: object
+        description: Edit category
+        schema:
+          id: category
+          type: object
+          properties:
+            category_name:
+              type: string
+              default: Dessert
+            category_description:
+              type: string
+              default: Oh ye o' sweet tooth
+        
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+      - in: path
+        name: category_id
+        type: integer
+        required: true
+        description: category id
+    """
     data = request.get_json()
     category = Category.query.filter_by(id=category_id).first()
-
     if not category:
         return jsonify({'message': 'Category does not exist', 'status': False})
 
@@ -158,10 +347,25 @@ def update_category(current_user, category_id):
 @app.route('/category/<category_id>', methods=['DELETE'])
 @token_required
 def delete_category(current_user, category_id):
-    
+    """Delete category by id.
+    ---
+    tags:
+      - Category
+    parameters:
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+      - in: path
+        name: category_id
+        type: integer
+        required: true
+        description: category id
+    """ 
     category = Category.query.filter_by(id=category_id).first()
     if not category:
-        return jsonify({'message': 'Could not find category', 'status': False})
+        return jsonify({'message': 'Could not find category', 'status': False}), 404
 
     db.session.delete(category)
     db.session.commit()
