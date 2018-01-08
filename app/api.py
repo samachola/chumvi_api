@@ -62,7 +62,7 @@ def register():
         description: New user details
         schema:
           type: object
-          id: user
+          id: userreg
           properties:
             username:
               type: string
@@ -78,19 +78,16 @@ def register():
         description: Registration Successful
         schema:
           properties:
-            username:
+            message:
               type: string
-              default: achola
-            email:
-              type: string
-              default: sam.achola@live.com
-            password:
-              type: string
-              default: "123456"
+              default: Registration Successful'
+            status:
+              type: boolean
+              default: True
     """
     data = request.get_json()
 
-    if not data['username'] or not data['email']:
+    if not data['username'] or not data['email'] or data['email'].isspace() or data['username'].isspace() :
         return jsonify({"message": "All fields are required"})
     if not check_mail(data['email']):
         return jsonify({"message": "Please provide a valid email", "status": False})
@@ -98,7 +95,7 @@ def register():
     new_user = User(username=data['username'], email=data['email'], admin=False, password=hashed_password)
     new_user.save()
 
-    return jsonify({'message': 'Registration Successful'})
+    return jsonify({'message': 'Registration Successful', 'status': True})
 
 @app.route('/auth/login', methods=['POST'])
 def login():
@@ -135,13 +132,15 @@ def login():
               default: true
             token:
               type: string
-              default: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNhbS5hY2hvbGFAbGl2ZS5jb20iLCJleHAiOjE1MTM5NDM5NDV9.r6Bo3dUTzcw5wogGSKVH7kewyP6pk-GPkeA66ElptjI"
+              default: "[token]"
 
     """
     data = request.get_json()
 
-    if not data or not data['email'] or not data['password']:
-        return jsonify({'message': 'email and password is required'}), 401
+    if not data or not data['email'] or not data['password'] or data['email'].isspace() or data['password'].isspace():
+       return jsonify({'message': 'email and password is required'}), 401
+    if not check_mail(data['email']):
+        return jsonify({'message': 'Please provide a valid email address', 'status': False})
 
     user = User.query.filter_by(email=data['email']).first()
 
@@ -250,7 +249,6 @@ def get_categories(current_user):
         required: true
         description: x-access-token
     """
-    
     data = []
     categories = Category.query.filter_by(user_id=current_user.id).all()
     for cats in categories:
@@ -375,6 +373,50 @@ def delete_category(current_user, category_id):
 @app.route('/recipe', methods=['POST'])
 @token_required
 def add_recipe(current_user):
+    """Post a new recipe. 
+    ---
+    tags:
+      - Recipe
+    parameters:
+      - in: body
+        name: body
+        required: true
+        type: object
+        description: Add a new recipe
+        schema:
+          id: recipe
+          type: object
+          properties:
+            title:
+              type: string
+              default: Maindi
+            ingredients:
+              type: string
+              default: Maize, Chilli powder
+            steps:
+              type: string
+              default: Grill Maize, add chilli, enjoy
+            category_id:
+              type: integer
+              default: 1
+            
+      - in: header
+        name: x-access-token
+        required: true
+        type: string
+        description: x-access-token
+    responses:
+      200:
+        description: Successfully added new Recipe
+        schema:
+          properties:
+            status:
+              type: boolean
+              default: true
+            message:
+               type: string
+               default: Successfully added new Recipe      
+    """
 
     data = request.get_json()
 
@@ -392,6 +434,17 @@ def add_recipe(current_user):
 @app.route('/recipe', methods=['GET'])
 @token_required
 def get_recipes(current_user):
+    """Get all user's recipes.
+    ---
+    tags:
+      - Recipe
+    parameters:
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+    """
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 2))
     q = str(request.args.get('q','')).lower()
@@ -432,6 +485,22 @@ def get_recipes(current_user):
 @app.route('/recipe/<recipe_id>', methods=['GET'])
 @token_required
 def get_recipe(current_user, recipe_id):
+    """Get recipe by id.
+    ---
+    tags:
+      - Recipe
+    parameters:
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+      - in: path
+        name: recipe_id
+        type: integer
+        required: true
+        description: recipe id
+    """
     recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
     if not recipe:
@@ -450,6 +519,57 @@ def get_recipe(current_user, recipe_id):
 @app.route('/recipe/<recipe_id>', methods=['PUT'])
 @token_required
 def update_recipe(current_user, recipe_id):
+    
+    """Edit recipe by id. 
+    ---
+    tags:
+      - Recipe
+    parameters:
+      - in: body
+        name: body
+        required: true
+        type: object
+        description: Edit a recipe
+        schema:
+          id: recipe
+          type: object
+          properties:
+            title:
+              type: string
+              default: Maindi
+            ingredients:
+              type: string
+              default: Maize, Chilli powder
+            steps:
+              type: string
+              default: Boil Maize, add chilli, enjoy
+            category_id:
+              type: integer
+              default: 1
+            
+      - in: header
+        name: x-access-token
+        required: true
+        type: string
+        description: x-access-token
+      - in: path
+        name: recipe_id
+        type: integer
+        required: true
+        description: recipe id
+        
+    responses:
+      200:
+        description: Successfully updated recipe
+        schema:
+          properties:
+            status:
+              type: boolean
+              default: true
+            message:
+               type: string
+               default: Successfully updated recipe      
+    """
     data = request.get_json()
     recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
@@ -473,6 +593,22 @@ def update_recipe(current_user, recipe_id):
 @app.route('/recipe/<recipe_id>', methods=['DELETE'])
 @token_required
 def delete_recipe(current_user, recipe_id):
+    """Delete recipe.
+    ---
+    tags:
+      - Recipe
+    parameters:
+      - in: header
+        name: x-access-token
+        type: string
+        required: true
+        description: x-access-token
+      - in: path
+        name: recipe_id
+        type: integer
+        required: true
+        description: recipe id
+    """
     recipe = Recipe.query.filter_by(id=recipe_id).first()
 
     if not recipe:
@@ -482,7 +618,7 @@ def delete_recipe(current_user, recipe_id):
     db.session.commit()
     return jsonify({'message': 'Recipe deleted successfully', 'status': True})
 
-def check_mail(user_email):    
+def check_mail(user_email):
     match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
 
     if match == None:
