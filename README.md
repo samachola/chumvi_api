@@ -2,7 +2,7 @@
 
 
 <a href='https://travis-ci.org/samachola/chumvi_api'>
-<img src='https://coveralls.io/repos/github/samachola/chumvi/badge.svg?branch=master' alt='Build Status' />
+<img src='https://travis-ci.org/samachola/chumvi_api.svg?branch=master' alt='Build Status' />
 </a>
 
 

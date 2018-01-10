@@ -91,6 +91,11 @@ def register():
         return jsonify({"message": "All fields are required"})
     if not check_mail(data['email']):
         return jsonify({"message": "Please provide a valid email", "status": False})
+    if not check_password(data['password']):
+        return jsonify({
+                        "message": "Password should contain atleast one uppercase character, one special character and one lowercase character",
+                        "status": False 
+                        }), 401
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(username=data['username'], email=data['email'], admin=False, password=hashed_password)
     new_user.save()
@@ -519,7 +524,6 @@ def get_recipe(current_user, recipe_id):
 @app.route('/recipe/<recipe_id>', methods=['PUT'])
 @token_required
 def update_recipe(current_user, recipe_id):
-    
     """Edit recipe by id. 
     ---
     tags:
@@ -620,6 +624,14 @@ def delete_recipe(current_user, recipe_id):
 
 def check_mail(user_email):
     match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
+
+    if match == None:
+        return False
+    else:
+        return True
+
+def check_password(user_password):
+    match = re.match('^(?=.*[a-z])(?=.*\d)(?=.*[A-Z])(?:.{8,})$', user_password)
 
     if match == None:
         return False
