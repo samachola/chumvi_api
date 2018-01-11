@@ -7,6 +7,7 @@ from functools import wraps
 from app import app, db, models
 import re
 from flasgger import Swagger
+from sqlalchemy import or_
 
 swagger = Swagger(app, 
         template={
@@ -88,19 +89,29 @@ def register():
     data = request.get_json()
 
     if not data['username'] or not data['email'] or data['email'].isspace() or data['username'].isspace() :
-        return jsonify({"message": "All fields are required"})
+        return jsonify({"message": "All fields are required"}), 401
     if not check_mail(data['email']):
-        return jsonify({"message": "Please provide a valid email", "status": False})
+        return jsonify({"message": "Please provide a valid email", "status": False}), 401
     if not check_password(data['password']):
         return jsonify({
                         "message": "Password should contain atleast one uppercase character, one special character and one lowercase character",
                         "status": False 
-                        }), 401
+                        }), 422
+    email_exists = User.query.filter_by(email=data['email']).first()
+    if email_exists:
+          return jsonify({"message": "user with the same email already exists", "status": False}), 403
+    username_exists = User.query.filter_by(username=data['username']).first()
+    if username_exists:
+          return jsonify({'message': 'A user with the same username already exists', 'status': False}), 403
+
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(username=data['username'], email=data['email'], admin=False, password=hashed_password)
-    new_user.save()
+    try:
+      new_user.save()
+    except:
+      return jsonify({"message": "user already exists", "status": False}), 401
 
-    return jsonify({'message': 'Registration Successful', 'status': True})
+    return jsonify({'message': 'Registration Successful', 'status': True}), 201
 
 @app.route('/auth/login', methods=['POST'])
 def login():
@@ -138,45 +149,34 @@ def login():
             token:
               type: string
               default: "[token]"
-
     """
     data = request.get_json()
 
     if not data or not data['email'] or not data['password'] or data['email'].isspace() or data['password'].isspace():
        return jsonify({'message': 'email and password is required'}), 401
     if not check_mail(data['email']):
-        return jsonify({'message': 'Please provide a valid email address', 'status': False})
+        return jsonify({'message': 'Please provide a valid email address', 'status': False}), 422
 
     user = User.query.filter_by(email=data['email']).first()
-
     if not user:
         return jsonify({'message': 'User does not exists'}), 401
     if check_password_hash(user.password, data['password']):
-        token = jwt.encode({'email': user.email, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=1440)}, app.secret_key)
-        return jsonify({'message':'Login successful', 'token': token.decode('UTF-8'), 'status': True})
+        token = jwt.encode({'email': user.email, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=48)}, app.secret_key)
+        return jsonify({'message':'Login successful', 'token': token.decode('UTF-8'), 'status': True}), 200
 
     return jsonify({'message': 'You provided an incorrect password'}), 401
-
-
-@app.route('/auth/logout', methods=['POST'])
-def logout():
-    data = request.get_json()
-    if not data:
-        return jsonify({'message': 'something went wrong'})
-
-    return jsonify({'message': 'user is logged out successfully'})
 
 @app.route('/auth/reset-password', methods=['POST'])
 def reset():
     data = request.get_json()
 
     if not data or not data['email']:
-        return jsonify({'message': 'Email is required'})
+        return jsonify({'message': 'Email is required'}), 422
 
     user = User.query.filter_by(email=data['email']).first()
 
     if not user:
-        return jsonify({'message': 'Email does not exists'}), 401
+        return jsonify({'message': 'Email does not exists'}), 400
 
     return jsonify({'message': 'A reset link has been sent to your email'})
 
@@ -226,13 +226,15 @@ def add_category(current_user):
                default: Succefully added new category      
     """
     if not current_user:
-        return jsonify({'message': 'Permission required', 'status': False})
+        return jsonify({'message': 'Permission required', 'status': False}), 401
 
     data = request.get_json()
     if not data or not data['category_name'] or data['category_name'].isspace():
-        return jsonify({'message': 'Category name is required', 'status': False})
+        return jsonify({'message': 'Category name is required', 'status': False}), 422
     if not data['category_description'] or data['category_description'].isspace():
-        return jsonify({'message': 'Category description is required', 'status': False})
+        return jsonify({'message': 'Category description is required', 'status': False}), 422
+    if category_exists(data['category_name']):
+          return jsonify({'message': 'category already exists'}), 400
 
     new_category = Category(category_name=data['category_name'], category_description=data['category_description'], user_id=current_user.id)
     new_category.save()
@@ -426,10 +428,11 @@ def add_recipe(current_user):
     data = request.get_json()
 
     if not data or not data['title'] or not data['ingredients'] or not data['steps'] or not data['category_id']:
-        return jsonify({'message': 'all recipe fields are required', 'status': False})
+        return jsonify({'message': 'all recipe fields are required', 'status': False}), 401
     if data['title'].isspace() or data['ingredients'].isspace() or data['steps'].isspace():
-        return jsonify({'message': 'all recipe fields are required', 'status': False})        
-
+        return jsonify({'message': 'all recipe fields are required', 'status': False}), 401      
+    if recipe_exists(data['title']):
+          return jsonify({'message': 'Recipe already exists', 'status': False}), 401
     recipe = Recipe(title=data['title'], ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
     recipe.save()
 
@@ -451,7 +454,7 @@ def get_recipes(current_user):
         description: x-access-token
     """
     page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 2))
+    per_page = int(request.args.get('per_page', 10))
     q = str(request.args.get('q','')).lower()
 
     output = []
@@ -461,7 +464,7 @@ def get_recipes(current_user):
         return jsonify({'message': 'No recipes available'})
     if q:
         for recipe in recipes.items: 
-            if q in recipe.title.lower() or q in recipe.ingredients.lower() or q in recipe.steps.lower() :  
+            if q.lower() in recipe.title.lower() or q.lower() in recipe.ingredients.lower() or q.lower() in recipe.steps.lower() :  
                 recipee = {}
                 recipee['id'] = recipe.id
                 recipee['title'] = recipe.title
@@ -631,9 +634,26 @@ def check_mail(user_email):
         return True
 
 def check_password(user_password):
-    match = re.match('^(?=.*[a-z])(?=.*\d)(?=.*[A-Z])(?:.{8,})$', user_password)
+    """Check if a password is strong"""
+    match = re.match('^(?=.*[a-z])(?=.*\d)(?=.*[A-Z])(?:.{6,})$', user_password)
 
     if match == None:
         return False
     else:
         return True
+
+def recipe_exists(title):
+  """Helper functions to check if a recipe already exists."""
+  recipe = Recipe.query.filter_by(title=title).first()
+  if recipe:
+    return True
+  else: 
+    return False
+
+def category_exists(title):
+      """Helper functions to check if a recipe already exists."""
+      recipe = Category.query.filter_by(category_name=title).first()
+      if recipe:
+        return True
+      else: 
+        return False

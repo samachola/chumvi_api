@@ -32,6 +32,7 @@ class Category(db.Model):
     category_name = db.Column(db.String(80))
     category_description = db.Column(db.String)
     user_id = db.Column(db.Integer)
+    recipes = db.relationship('Recipe', order_by='Recipe.id', cascade="all, delete-orphan")
 
     def __init__(self, category_name, category_description, user_id):
         self.category_name = category_name
@@ -54,7 +55,7 @@ class Recipe(db.Model):
     title = db.Column(db.String(200))
     ingredients = db.Column(db.String)
     steps = db.Column(db.String)
-    category_id = db.Column(db.Integer)
+    category_id = db.Column(db.Integer, db.ForeignKey(Category.id))
     user_id = db.Column(db.Integer)
 
     def __init__(self, title, ingredients, steps, category_id, user_id):
