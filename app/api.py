@@ -103,7 +103,8 @@ def register():
     username_exists = User.query.filter_by(username=data['username']).first()
     if username_exists:
           return jsonify({'message': 'A user with the same username already exists', 'status': False}), 403
-
+    if special_character(data['username']):
+          return jsonify({'message': 'username cannot contain special character'})
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(username=data['username'], email=data['email'], admin=False, password=hashed_password)
     try:
@@ -230,16 +231,19 @@ def add_category(current_user):
 
     data = request.get_json()
     if not data or not data['category_name'] or data['category_name'].isspace():
-        return jsonify({'message': 'Category name is required', 'status': False}), 422
+          return jsonify({'message': 'Category name is required', 'status': False}), 422
+    if special_character(data['category_name']):
+          return jsonify({'message': 'Category name should not contain special characters', 'status': False}), 401
     if not data['category_description'] or data['category_description'].isspace():
-        return jsonify({'message': 'Category description is required', 'status': False}), 422
+          return jsonify({'message': 'Category description is required', 'status': False}), 422
     if category_exists(data['category_name']):
-          return jsonify({'message': 'category already exists'}), 400
+          return jsonify({'message': 'category already exists', 'status': False}), 400
+    
 
     new_category = Category(category_name=data['category_name'], category_description=data['category_description'], user_id=current_user.id)
     new_category.save()
 
-    return jsonify({'message': 'Succefully added new category', 'status': True})
+    return jsonify({'message': 'Succefully added new category', 'status': True}), 201
 
 
 @app.route('/category', methods=['GET'])
@@ -256,6 +260,8 @@ def get_categories(current_user):
         required: true
         description: x-access-token
     """
+    if not current_user:
+          return jsonify({'message': 'Permision required'}), 401
     data = []
     categories = Category.query.filter_by(user_id=current_user.id).all()
     for cats in categories:
@@ -265,7 +271,7 @@ def get_categories(current_user):
         cat['category_description'] = cats.category_description
         data.append(cat)
 
-    return jsonify({'categories': data})
+    return jsonify({'categories': data}), 200
 
 @app.route('/category/<int:category_id>', methods=['GET'])
 @token_required
@@ -290,7 +296,7 @@ def get_category(current_user, category_id):
     category = Category.query.filter_by(id=category_id).first()
 
     if not category:
-        return jsonify({'message': 'Category does not exist', 'status': False})
+        return jsonify({'message': 'Category does not exist', 'status': False}), 404
 
     cat = {}
     cat['id'] = category.id
@@ -335,18 +341,20 @@ def update_category(current_user, category_id):
         required: true
         description: category id
     """
+    if not current_user:
+          return jsonify({'message': 'Permission required'}), 401
     data = request.get_json()
     category = Category.query.filter_by(id=category_id).first()
     if not category:
-        return jsonify({'message': 'Category does not exist', 'status': False})
+        return jsonify({'message': 'Category does not exist', 'status': False}), 404
 
     if not data or not data['category_name']:
-        return jsonify({'message': 'category name missing', 'status': False})
+        return jsonify({'message': 'category name missing', 'status': False}), 401
 
     category.category_name = data['category_name']
     category.category_description = data['category_description']
     db.session.commit()
-    return jsonify({'message': 'Successfully updated category', 'status': True})
+    return jsonify({'message': 'Successfully updated category', 'status': True}), 202
 
 
 @app.route('/category/<category_id>', methods=['DELETE'])
@@ -368,13 +376,15 @@ def delete_category(current_user, category_id):
         required: true
         description: category id
     """ 
+    if not current_user:
+          return jsonify({'message': 'Permission required'}), 401
     category = Category.query.filter_by(id=category_id).first()
     if not category:
         return jsonify({'message': 'Could not find category', 'status': False}), 404
 
     db.session.delete(category)
     db.session.commit()
-    return jsonify({'message': 'Category successfully deleted', 'status': True})
+    return jsonify({'message': 'Category successfully deleted', 'status': True}), 200
     
 
 @app.route('/recipe', methods=['POST'])
@@ -424,7 +434,8 @@ def add_recipe(current_user):
                type: string
                default: Successfully added new Recipe      
     """
-
+    if not current_user:
+          return jsonify({'message': 'Permission required'}), 401
     data = request.get_json()
 
     if not data or not data['title'] or not data['ingredients'] or not data['steps'] or not data['category_id']:
@@ -433,10 +444,12 @@ def add_recipe(current_user):
         return jsonify({'message': 'all recipe fields are required', 'status': False}), 401      
     if recipe_exists(data['title']):
           return jsonify({'message': 'Recipe already exists', 'status': False}), 401
+    if special_character(data['title']):
+          return jsonify({'message': 'Recipe title should not contain special characters', 'status': False }), 401
     recipe = Recipe(title=data['title'], ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
     recipe.save()
 
-    return jsonify({'message': 'Successfully added new Recipe', 'status': True})
+    return jsonify({'message': 'Successfully added new Recipe', 'status': True}), 201
 
 
 @app.route('/recipe', methods=['GET'])
@@ -512,7 +525,7 @@ def get_recipe(current_user, recipe_id):
     recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
     if not recipe:
-        return jsonify({'message': 'Recipe is not available', 'status': False})
+        return jsonify({'message': 'Recipe is not available', 'status': False}), 404
 
     recipee = {}
     recipee['id'] = recipe.id
@@ -581,13 +594,13 @@ def update_recipe(current_user, recipe_id):
     recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
     if not recipe:
-        return jsonify({'message': 'Recipe is not available', 'status': False})
-    if data['title'].isspace():
-        return jsonify({'message': 'Title is empty'})
-    if data['ingredients'].isspace():
-        return jsonify({'message': 'Recipe ingredients are required'})
-    if data['steps'].isspace():
-        return jsonify({'message': 'yo! we can\'t cook nothing!'})
+        return jsonify({'message': 'Recipe is not available', 'status': False}), 404
+    if data['title'].isspace() or not data['title']:
+        return jsonify({'message': 'Title is required'}), 401
+    if data['ingredients'].isspace() or not data['ingredients']:
+        return jsonify({'message': 'Recipe ingredients are required'}), 401
+    if data['steps'].isspace() or not data['steps'] :
+        return jsonify({'message': 'yo! we can\'t cook nothing!'}), 401
 
     recipe.title = data['title']
     recipe.ingredients = data['ingredients']
@@ -595,7 +608,7 @@ def update_recipe(current_user, recipe_id):
     recipe.category_id = data['category_id']
 
     db.session.commit()
-    return jsonify({'message': 'Successfully updated recipe', 'status': True})
+    return jsonify({'message': 'Successfully updated recipe', 'status': True}), 201
 
 @app.route('/recipe/<recipe_id>', methods=['DELETE'])
 @token_required
@@ -619,11 +632,11 @@ def delete_recipe(current_user, recipe_id):
     recipe = Recipe.query.filter_by(id=recipe_id).first()
 
     if not recipe:
-        return jsonify({'message': 'Recipe not found', 'status': False})
+        return jsonify({'message': 'Recipe not found', 'status': False}), 4040
 
     db.session.delete(recipe)
     db.session.commit()
-    return jsonify({'message': 'Recipe deleted successfully', 'status': True})
+    return jsonify({'message': 'Recipe deleted successfully', 'status': True}), 201
 
 def check_mail(user_email):
     match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
@@ -657,3 +670,10 @@ def category_exists(title):
         return True
       else: 
         return False
+
+def special_character(title):
+      """Helper function that checks if item has a special character."""
+      if re.findall('[^A-Za-z0-9 ]', title):
+            return True
+      else:
+            return False
