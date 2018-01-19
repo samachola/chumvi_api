@@ -92,10 +92,10 @@ http://127.0.0.1:5000/api-v0/recipe?q=example
 | /api-v0/auth/register | POST | Registers new user | FALSE
 | /api-v0/auth/login | POST | Handles POST request for /auth/login | TRUE
 | /api-v0/category | GET | Get every category of logged in user|TRUE
-| /api-v0/category/{_id} | GET | Get category with {id} of logged in user|TRUE
+| /api-v0/category/ | GET | Gets the list of categories |TRUE
 | /api-v0/category | POST | Create a new category|TRUE
-| /api-v0/category/{_id}  | PUT | Update a category with {id} of logged in user|TRUE
-| /api-v0/category/{_id} | DELETE | Delete category with {id} of logged in user|TRUE
+| /api-v0/category/{category_id}  | PUT | Update a category|TRUE
+| /api-v0/category/{category_id} | DELETE | Delete category by id|TRUE
 | /api-v0/recipe | POST | Creates a recipe|TRUE
 | /api-v0/recipe | GET | Gets all recipes
 | /api-v0/recipe/{id} | GET | Gets a single recipe|TRUE
