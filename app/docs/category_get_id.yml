@@ -1,0 +1,15 @@
+Get category by id
+---
+tags:
+  - Category
+parameters:
+  - in: header
+    name: x-access-token
+    type: string
+    required: true
+    description: x-access-token
+  - in: path
+    name: category_id
+    type: integer
+    required: true
+    description: category id

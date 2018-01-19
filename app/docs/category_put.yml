@@ -1,0 +1,31 @@
+Edit Category
+---
+tags:
+  - Category
+parameters:
+  - in: body
+    name: body
+    required: true
+    type: object
+    description: Edit category
+    schema:
+      id: category
+      type: object
+      properties:
+        category_name:
+          type: string
+          default: Dessert
+        category_description:
+          type: string
+          default: Oh ye o' sweet tooth
+    
+  - in: header
+    name: x-access-token
+    type: string
+    required: true
+    description: x-access-token
+  - in: path
+    name: category_id
+    type: integer
+    required: true
+    description: category id

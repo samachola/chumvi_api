@@ -6,7 +6,7 @@ import datetime
 from functools import wraps
 from app import app, db, models
 import re
-from flasgger import Swagger
+from flasgger import swag_from
 from .helpers import token_required, check_password, check_mail, special_character, recipe_exists, category_exists
 
 User = models.User
@@ -17,50 +17,10 @@ mod = Blueprint('recipes', __name__)
 
 @mod.route('/recipe', methods=['POST'])
 @token_required
+@swag_from('docs/recipe_post.yml')
 def add_recipe(current_user):
-    """Post a new recipe. 
-    ---
-    tags:
-      - Recipe
-    parameters:
-      - in: body
-        name: body
-        required: true
-        type: object
-        description: Add a new recipe
-        schema:
-          id: recipe
-          type: object
-          properties:
-            title:
-              type: string
-              default: Maindi
-            ingredients:
-              type: string
-              default: Maize, Chilli powder
-            steps:
-              type: string
-              default: Grill Maize, add chilli, enjoy
-            category_id:
-              type: integer
-              default: 1
-            
-      - in: header
-        name: x-access-token
-        required: true
-        type: string
-        description: x-access-token
-    responses:
-      201:
-        description: Successfully added new Recipe
-        schema:
-          properties:
-            status:
-              type: boolean
-              default: true
-            message:
-               type: string
-               default: Successfully added new Recipe      
+    """
+    Post a new recipe.     
     """
     if not current_user:
           return jsonify({'message': 'Permission required'}), 401
@@ -89,17 +49,10 @@ def add_recipe(current_user):
 
 @mod.route('/recipe', methods=['GET'])
 @token_required
+@swag_from('docs/recipe_get_all.yml')
 def get_recipes(current_user):
-    """Get all user's recipes.
-    ---
-    tags:
-      - Recipe
-    parameters:
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
+    """
+      Get all user's recipes.
     """
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 10))
@@ -138,22 +91,10 @@ def get_recipes(current_user):
 
 @mod.route('/recipe/<recipe_id>', methods=['GET'])
 @token_required
+@swag_from('docs/recipe_get_id.yml')
 def get_recipe(current_user, recipe_id):
-    """Get recipe by id.
-    ---
-    tags:
-      - Recipe
-    parameters:
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
-      - in: path
-        name: recipe_id
-        type: integer
-        required: true
-        description: recipe id
+    """
+    Get recipe by id.
     """
     recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
 
@@ -171,56 +112,10 @@ def get_recipe(current_user, recipe_id):
 
 @mod.route('/recipe/<recipe_id>', methods=['PUT'])
 @token_required
+@swag_from('docs/recipe_put.yml')
 def update_recipe(current_user, recipe_id):
     """Edit recipe by id. 
-    ---
-    tags:
-      - Recipe
-    parameters:
-      - in: body
-        name: body
-        required: true
-        type: object
-        description: Edit a recipe
-        schema:
-          id: recipe
-          type: object
-          properties:
-            title:
-              type: string
-              default: Maindi
-            ingredients:
-              type: string
-              default: Maize, Chilli powder
-            steps:
-              type: string
-              default: Boil Maize, add chilli, enjoy
-            category_id:
-              type: integer
-              default: 1
-            
-      - in: header
-        name: x-access-token
-        required: true
-        type: string
-        description: x-access-token
-      - in: path
-        name: recipe_id
-        type: integer
-        required: true
-        description: recipe id
-        
-    responses:
-      200:
-        description: Successfully updated recipe
-        schema:
-          properties:
-            status:
-              type: boolean
-              default: true
-            message:
-               type: string
-               default: Successfully updated recipe      
+         
     """
     data = request.get_json()
     recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
@@ -249,22 +144,10 @@ def update_recipe(current_user, recipe_id):
 
 @mod.route('/recipe/<recipe_id>', methods=['DELETE'])
 @token_required
+@swag_from('docs/recipe_delete.yml')
 def delete_recipe(current_user, recipe_id):
-    """Delete recipe.
-    ---
-    tags:
-      - Recipe
-    parameters:
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
-      - in: path
-        name: recipe_id
-        type: integer
-        required: true
-        description: recipe id
+    """
+    Delete recipe.
     """
     recipe = Recipe.query.filter_by(id=recipe_id).first()
 

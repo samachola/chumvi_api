@@ -6,7 +6,7 @@ import datetime
 from functools import wraps
 from app import app, db, models
 import re
-from flasgger import Swagger
+from flasgger import swag_from
 from .helpers import token_required, check_password, check_mail, special_character, category_exists
 
 User = models.User
@@ -17,47 +17,10 @@ mod = Blueprint('categories', __name__)
 
 @mod.route('/category', methods=['POST'])
 @token_required
+@swag_from('docs/category_post.yml')
 def add_category(current_user):
-    """Add recipe categories. 
-    ---
-    tags:
-      - Category
-    parameters:
-      - in: body
-        name: body
-        required: true
-        type: object
-        description: Add a new category
-        schema:
-          id: category
-          type: object
-          properties:
-            category_name:
-              type: string
-              default: Dessert
-            category_description:
-              type: string
-              default: Oh ye o' sweet tooth
-      - in: header
-        name: x-access-token
-        required: true
-        type: string
-        description: x-access-token
-        schema:
-          properties:
-            x-access-token:
-              type: string
-    responses:
-      200:
-        description: Succefully added new category
-        schema:
-          properties:
-            status:
-              type: boolean
-              default: true
-            message:
-               type: string
-               default: Succefully added new category      
+    """
+    Add recipe categories.     
     """
     if not current_user:
         return jsonify({'message': 'Permission required', 'status': False}), 401
@@ -90,17 +53,10 @@ def add_category(current_user):
 
 @mod.route('/category', methods=['GET'])
 @token_required
+@swag_from('docs/category_get_all.yml')
 def get_categories(current_user):
-    """Get all user categories.
-    ---
-    tags:
-      - Category
-    parameters:
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
+    """
+    Get all user categories.
     """
     if not current_user:
           return jsonify({'message': 'Permision required'}), 401
@@ -117,24 +73,11 @@ def get_categories(current_user):
 
 @mod.route('/category/<int:category_id>', methods=['GET'])
 @token_required
+@swag_from('docs/category_get_id.yml')
 def get_category(current_user, category_id):
-    """Get category by id.
-    ---
-    tags:
-      - Category
-    parameters:
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
-      - in: path
-        name: category_id
-        type: integer
-        required: true
-        description: category id
     """
-    
+    Get category by id.
+    """
     category = Category.query.filter_by(id=category_id).first()
 
     if not category:
@@ -150,38 +93,10 @@ def get_category(current_user, category_id):
 
 @mod.route('/category/<category_id>', methods=['PUT'])
 @token_required
+@swag_from('docs/category_put.yml')
 def update_category(current_user, category_id):
-    """Update category by id.
-    ---
-    tags:
-      - Category
-    parameters:
-      - in: body
-        name: body
-        required: true
-        type: object
-        description: Edit category
-        schema:
-          id: category
-          type: object
-          properties:
-            category_name:
-              type: string
-              default: Dessert
-            category_description:
-              type: string
-              default: Oh ye o' sweet tooth
-        
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
-      - in: path
-        name: category_id
-        type: integer
-        required: true
-        description: category id
+    """
+    Update category by id.
     """
     if not current_user:
           return jsonify({'message': 'Permission required'}), 401
@@ -214,22 +129,10 @@ def update_category(current_user, category_id):
 
 @mod.route('/category/<category_id>', methods=['DELETE'])
 @token_required
+@swag_from('docs/category_delete.yml')
 def delete_category(current_user, category_id):
-    """Delete category by id.
-    ---
-    tags:
-      - Category
-    parameters:
-      - in: header
-        name: x-access-token
-        type: string
-        required: true
-        description: x-access-token
-      - in: path
-        name: category_id
-        type: integer
-        required: true
-        description: category id
+    """
+    Delete category by id.
     """ 
     if not current_user:
           return jsonify({'message': 'Permission required'}), 401

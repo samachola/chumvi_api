@@ -1,0 +1,15 @@
+Get Recipe By ID
+---
+tags:
+  - Recipe
+parameters:
+  - in: header
+    name: x-access-token
+    type: string
+    required: true
+    description: x-access-token
+  - in: path
+    name: recipe_id
+    type: integer
+    required: true
+    description: recipe id

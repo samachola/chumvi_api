@@ -1,0 +1,40 @@
+Add a new category
+---
+tags:
+  - Category
+parameters:
+  - in: body
+    name: body
+    required: true
+    type: object
+    description: Add a new category
+    schema:
+      id: category
+      type: object
+      properties:
+        category_name:
+          type: string
+          default: Dessert
+        category_description:
+          type: string
+          default: Oh ye o' sweet tooth
+  - in: header
+    name: x-access-token
+    required: true
+    type: string
+    description: x-access-token
+    schema:
+      properties:
+        x-access-token:
+          type: string
+responses:
+  200:
+    description: Succefully added new category
+    schema:
+      properties:
+        status:
+          type: boolean
+          default: true
+        message:
+            type: string
+            default: Succefully added new category 

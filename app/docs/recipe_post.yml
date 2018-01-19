@@ -1,0 +1,43 @@
+Post a new recipe
+---
+tags:
+  - Recipe
+parameters:
+  - in: body
+    name: body
+    required: true
+    type: object
+    description: Add a new recipe
+    schema:
+      id: recipe
+      type: object
+      properties:
+        title:
+          type: string
+          default: Maindi
+        ingredients:
+          type: string
+          default: Maize, Chilli powder
+        steps:
+          type: string
+          default: Grill Maize, add chilli, enjoy
+        category_id:
+          type: integer
+          default: 1
+        
+  - in: header
+    name: x-access-token
+    required: true
+    type: string
+    description: x-access-token
+responses:
+  201:
+    description: Successfully added new Recipe
+    schema:
+      properties:
+        status:
+          type: boolean
+          default: true
+        message:
+            type: string
+            default: Successfully added new Recipe  

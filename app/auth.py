@@ -6,7 +6,7 @@ import datetime
 from functools import wraps
 from app import app, db, models
 import re
-from flasgger import Swagger
+from flasgger import swag_from
 from .helpers import token_required, check_password, check_mail, special_character
 
 User = models.User
@@ -14,42 +14,10 @@ User = models.User
 mod = Blueprint('auth', __name__)
 
 @mod.route('/auth/register', methods=['POST'])
+@swag_from('docs/auth_register.yml')
 def register():
-    """ User Registration
-    Register a user
-    ---
-    tags:
-      - Auth
-    parameters:
-      - in: body
-        name: body
-        required: true
-        type: object
-        description: New user details
-        schema:
-          type: object
-          id: userreg
-          properties:
-            username:
-              type: string
-              default: achola
-            email:
-              type: string
-              default: sam.achola@live.com
-            password:
-              type: string
-              default: "123456"
-    responses:
-      200:
-        description: Registration Successful
-        schema:
-          properties:
-            message:
-              type: string
-              default: Registration Successful'
-            status:
-              type: boolean
-              default: True
+    """ 
+    User Registration
     """
     data = request.get_json()
 
@@ -99,44 +67,9 @@ def register():
     return jsonify({'message': 'Registration Successful', 'status': True}), 201
 
 @mod.route('/auth/login', methods=['POST'])
+@swag_from('docs/auth_login.yml')
 def login():
-    """ User Login
-    ---
-    tags:
-      - Auth
-    parameters:
-      - in: body
-        name: body
-        required: true
-        type: object
-        description: User details for login
-        schema:
-          id: user
-          type: object
-          properties:
-            email:
-              type: string
-              default: sam.achola@live.com
-            password:
-              type: string
-              default: "123456"
-    responses:
-      200:
-        description: Login successful
-        schema:
-          properties:
-            message:
-              type: string
-              default: Login successful
-            status:
-              type: boolean
-              default: true
-            token:
-              type: string
-              default: "[token]"
-    """
     data = request.get_json()
-
     if 'password' not in data:
         return jsonify({"message": "password key does not exist", 'status': False}), 403
 

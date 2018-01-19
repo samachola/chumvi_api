@@ -1,0 +1,10 @@
+Get all categories
+---
+tags:
+  - Category
+parameters:
+  - in: header
+    name: x-access-token
+    type: string
+    required: true
+    description: x-access-token
