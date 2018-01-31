@@ -1,17 +1,18 @@
-from flask import Blueprint, request, jsonify, make_response
-
-from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
 import datetime
-from functools import wraps
-from app import app, db, models
 import re
-from flasgger import swag_from
-from .helpers import token_required, check_password, check_mail, special_character, recipe_exists, category_exists
+import json
+from json.decoder import JSONDecodeError
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
-User = models.User
-Recipe = models.Recipe
-Category = models.Category
+from flask import Blueprint, request, jsonify, make_response
+from app import app, db, models
+
+from flasgger import swag_from
+from .serializers import RecipeSchema
+from .helpers import token_required, check_password, check_mail, special_character, recipe_exists, category_exists
+from .models import User, Category, Recipe
+
 
 mod = Blueprint('recipes', __name__)
 
@@ -26,25 +27,23 @@ def add_recipe(current_user):
           return jsonify({'message': 'Permission required'}), 401
     
     data = request.get_json()
-    if 'title' not in data or 'ingredients' not in data or 'steps' not in data or 'category_id' not in data:
-          return jsonify({'message': 'All keys are required.', 'status': False}), 403
+    schema = RecipeSchema()
+    try:
+        recipe, errors = schema.loads(request.data)
+    except JSONDecodeError:
+        return jsonify({'message': 'Could not process the provided keys'}), 422
+    if errors:
+        return make_response(json.dumps({'errors': errors, 'status': False})), 422
+    elif recipe_exists(data['title'].lower(), current_user.id):
+        return jsonify({'message': 'Recipe with similar name already exists', 'status': False }), 422
 
-    if not data or not data['title'] or not data['ingredients'] or not data['steps'] or not data['category_id']:
-        return jsonify({'message': 'all recipe fields are required', 'status': False}), 401
+    cat_exists = Category.query.filter(Category.id == data['category_id']).filter(Category.user_id == current_user.id).first()
+    if cat_exists:
+        my_recipe = Recipe(title=data['title'].lower(), ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
+        my_recipe.save()
 
-    if data['title'].isspace() or data['ingredients'].isspace() or data['steps'].isspace():
-        return jsonify({'message': 'all recipe fields are required', 'status': False}), 401   
-
-    if recipe_exists(data['title']):
-        return jsonify({'message': 'Recipe already exists', 'status': False}), 401
-
-    if special_character(data['title']) or special_character(data['ingredients']) or special_character(data['steps']):
-        return jsonify({'message': 'Recipe info should not contain special characters', 'status': False }), 401
-        
-    recipe = Recipe(title=data['title'], ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
-    recipe.save()
-
-    return jsonify({'message': 'Successfully added new Recipe', 'status': True}), 201
+        return jsonify({'message': 'Successfully added new Recipe', 'status': True, 'recipe': recipe}), 201
+    return jsonify({'message':'Could not Find a matching category id.', 'status': False}), 403
 
 
 @mod.route('/recipe', methods=['GET'])
@@ -114,33 +113,33 @@ def get_recipe(current_user, recipe_id):
 @token_required
 @swag_from('docs/recipe_put.yml')
 def update_recipe(current_user, recipe_id):
-    """Edit recipe by id. 
-         
     """
+    Edit recipe by id.   
+    """
+    if not current_user:
+        return jsonify({'message': 'Permission required'}), 403
     data = request.get_json()
-    recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
+    schema = RecipeSchema()
+    try:
+        recipe, errors = schema.loads(request.data)
+    except JSONDecodeError:
+        return jsonify({'message': 'Could not process the provided keys'}), 422
+    if errors:
+        return make_response(json.dumps({'errors': errors, 'status': False})), 422
 
-    if 'title' not in data or 'ingredients' not in data or 'steps' not in data or 'category_id' not in data:
-          return jsonify({'message': 'All keys are required.', 'status': False}), 403
-
-    if not recipe:
+    my_recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
+    if not my_recipe:
         return jsonify({'message': 'Recipe is not available', 'status': False}), 404
-    if data['title'].isspace() or not data['title']:
-        return jsonify({'message': 'Title is required'}), 401
-    if data['ingredients'].isspace() or not data['ingredients']:
-        return jsonify({'message': 'Recipe ingredients are required'}), 401
-    if data['steps'].isspace() or not data['steps'] :
-        return jsonify({'message': 'yo! we can\'t cook nothing!'}), 401
-    if special_character(data['title']) or special_character(data['ingredients']) or special_character(data['steps']):
-          return jsonify({'message': 'Special characters are not allowed'}), 401
+    cat_exists = Category.query.filter(Category.id == data['category_id']).filter(Category.user_id == current_user.id).first()
+    if cat_exists:
+        my_recipe.title = data['title']
+        my_recipe.ingredients = data['ingredients']
+        my_recipe.step = data['steps']
+        my_recipe.category_id = data['category_id']
 
-    recipe.title = data['title']
-    recipe.ingredients = data['ingredients']
-    recipe.step = data['steps']
-    recipe.category_id = data['category_id']
-
-    db.session.commit()
-    return jsonify({'message': 'Successfully updated recipe', 'status': True}), 201
+        db.session.commit()
+        return jsonify({'message': 'Successfully updated recipe', 'status': True, 'recipe': recipe}), 201
+    return jsonify({'message':'Could not Find a matching category id.', 'status': False}), 403
 
 @mod.route('/recipe/<recipe_id>', methods=['DELETE'])
 @token_required
@@ -149,7 +148,9 @@ def delete_recipe(current_user, recipe_id):
     """
     Delete recipe.
     """
-    recipe = Recipe.query.filter_by(id=recipe_id).first()
+    if not current_user:
+        return jsonify({'message': 'Permission is required'}), 403
+    recipe = Recipe.query.filter(Recipe.id == recipe_id).filter(Recipe.user_id == current_user.id).first()
 
     if not recipe:
         return jsonify({'message': 'Recipe not found', 'status': False}), 4040

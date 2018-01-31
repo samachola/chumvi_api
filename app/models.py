@@ -8,13 +8,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(50), unique=True)
-    admin = db.Column(db.Boolean)
     password = db.Column(db.String(80))
 
-    def __init__(self, username, email, admin, password):
+    def __init__(self, username, email, password):
         self.username = username
         self.email = email
-        self.admin = admin
         self.password = password
 
     def save(self):
@@ -22,7 +20,7 @@ class User(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return "<User: {}>".format(self.username)
+        return "Successfully added : {}".format(self.username)
 
 class Category(db.Model):
     """This class represents the category table"""
@@ -44,7 +42,7 @@ class Category(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return "<Category: {}>".format(self.category_name)
+        return "Category: {}".format(self.category_name)
 
 class Recipe(db.Model):
     """This class represents the Recipe table."""
@@ -70,4 +68,4 @@ class Recipe(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return "<Recipe: {}>".format(self.title)
+        return "Recipe: {}".format(self.title)
