@@ -53,12 +53,18 @@ def get_recipes(current_user):
     """
       Get all user's recipes.
     """
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 10))
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+    except:
+        return jsonify({'message': 'Ivalid page, per_page parameter'}), 422
     q = str(request.args.get('q','')).lower()
 
     output = []
-    recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
+    try:
+        recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
+    except:
+        return jsonify({'message': 'The requested URL was not found on the server'})
            
     if not recipes:
         return jsonify({'message': 'No recipes available'})
@@ -82,10 +88,9 @@ def get_recipes(current_user):
             recipee['category_id'] = recipe.category_id
             output.append(recipee)
             
-    if output:
-        return jsonify({'recipes': output})
-    else:
-        return jsonify({"message": "No recipes found"})
+    
+    return jsonify({'recipes': output})
+   
 
 
 @mod.route('/recipe/<recipe_id>', methods=['GET'])
