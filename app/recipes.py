@@ -64,7 +64,7 @@ def get_recipes(current_user):
     try:
         recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
     except:
-        return jsonify({'message': 'The requested URL was not found on the server'})
+        return jsonify({'message': 'The requested URL was not found on the server'}), 404
            
     if not recipes:
         return jsonify({'message': 'No recipes available'})
@@ -137,14 +137,14 @@ def update_recipe(current_user, recipe_id):
         return jsonify({'message': 'Recipe is not available', 'status': False}), 404
     cat_exists = Category.query.filter(Category.id == data['category_id']).filter(Category.user_id == current_user.id).first()
     if cat_exists:
-        my_recipe.title = data['title']
+        my_recipe.title = data['title'].lower()
         my_recipe.ingredients = data['ingredients']
         my_recipe.step = data['steps']
         my_recipe.category_id = data['category_id']
 
         db.session.commit()
         return jsonify({'message': 'Successfully updated recipe', 'status': True, 'recipe': recipe}), 201
-    return jsonify({'message':'Could not Find a matching category id.', 'status': False}), 403
+    return jsonify({'message':'Could not Find a matching category id.', 'status': False}), 404
 
 @mod.route('/recipe/<recipe_id>', methods=['DELETE'])
 @token_required
@@ -158,7 +158,7 @@ def delete_recipe(current_user, recipe_id):
     recipe = Recipe.query.filter(Recipe.id == recipe_id).filter(Recipe.user_id == current_user.id).first()
 
     if not recipe:
-        return jsonify({'message': 'Recipe not found', 'status': False}), 4040
+        return jsonify({'message': 'Recipe not found', 'status': False}), 404
 
     db.session.delete(recipe)
     db.session.commit()

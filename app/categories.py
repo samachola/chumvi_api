@@ -108,7 +108,7 @@ def update_category(current_user, category_id):
     if not my_category:
         return jsonify({'message': 'Category does not exist', 'status': False}), 404
 
-    my_category.category_name = data['category_name']
+    my_category.category_name = data['category_name'].lower()
     my_category.category_description = data['category_description']
     db.session.commit()
     return jsonify({'message': 'Successfully updated category', 'status': True, 'category': category }), 201
@@ -116,7 +116,7 @@ def update_category(current_user, category_id):
 
 @mod.route('/category/<category_id>', methods=['DELETE'])
 @token_required
-@swag_from('docs/category_delete.yml')
+@swag_from('docs/category_delete.yml') 
 def delete_category(current_user, category_id):
     """
     Delete category by id.

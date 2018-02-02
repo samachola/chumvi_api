@@ -14,9 +14,9 @@ class ApiTestCase(unittest.TestCase):
 
     def setUp(self):
         self.tester = app.test_client(self)
-        self.login_data = {'email': 'acholasam1@gmail.com', 'password': 'Osupportit.0'}
+        self.login_data = {'email': 'test@example.com', 'password': 'Osupportit.0'}
         self.category_data = {'category_name': 'Breakfast', 'category_description': 'Awesome Breakfast'}
-        self.registration_data = {'username': 'achola', 'email': 'acholasam1@gmail.com', 'password': 'Osupportit.0'}
+        self.registration_data = {'username': 'testuser', 'email': 'test@example.com', 'password': 'Osupportit.0'}
         app.config.from_pyfile('testconf.cfg')        
         db.create_all()
 

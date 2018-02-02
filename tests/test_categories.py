@@ -77,7 +77,7 @@ class CategoryTestCase(ApiTestCase):
 
 
     def test_get_category(self):
-        """Tests if user can add a new category."""
+        """Tests if user can get a new category."""
         self.register()
         res = self.tester.post('/api-v0/auth/login', data=json.dumps(self.login_data), content_type='application/json')
         data = json.loads(res.data)

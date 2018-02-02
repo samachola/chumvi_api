@@ -45,7 +45,7 @@ def login():
     schema = LoginSchema()
     
     try:
-        user, errors = schema.loads(request.data)
+        auth_user, errors = schema.loads(request.data)
     except JSONDecodeError:
         return jsonify({'message': 'Missing keys'}), 422
 
