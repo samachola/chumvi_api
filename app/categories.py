@@ -29,7 +29,7 @@ def add_category(current_user):
     except JSONDecodeError:
         return jsonify({'message': 'Missing keys'}), 422
     if errors:
-        return make_response(json.dumps({'errors': errors})), 422
+        return make_response(json.dumps({'errors': errors, 'status': False})), 422
 
     cat_exists = Category.query.filter(Category.category_name == data['category_name'].lower()).filter(Category.user_id == current_user.id).first()
     if cat_exists:
@@ -102,7 +102,7 @@ def update_category(current_user, category_id):
     except JSONDecodeError:
         return jsonify({'message': 'Missing keys'}), 422
     if errors:
-        return make_response(json.dumps({'errors': errors})), 422
+        return make_response(json.dumps({'errors': errors, 'status': False})), 422
 
     my_category = Category.query.filter(Category.id == category_id).filter(Category.user_id == current_user.id).first()
     if not my_category:
@@ -111,7 +111,7 @@ def update_category(current_user, category_id):
     my_category.category_name = data['category_name']
     my_category.category_description = data['category_description']
     db.session.commit()
-    return jsonify({'message': 'Successfully updated category', 'status': True, 'category': category }), 202
+    return jsonify({'message': 'Successfully updated category', 'status': True, 'category': category }), 201
 
 
 @mod.route('/category/<category_id>', methods=['DELETE'])

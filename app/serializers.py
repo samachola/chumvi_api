@@ -24,7 +24,7 @@ class UserSchema(Schema):
     @validates('email')
     def validate_user_exists(self, email):
         if email_exists(email):
-            raise ValidationError('A user with email "%s" already exixts' % email)
+            raise ValidationError('A user with email "%s" already exists' % email)
 
     @validates('password')
     def validate_user_password(self, password):
@@ -52,8 +52,13 @@ class CategorySchema(Schema):
     def validate_category_name(self, category_name):
         if special_character(category_name):
             raise ValidationError('Category name should not contain special characters')
-        elif len(category_name) <= 4:
+        elif len(category_name) <= 4 or category_name.isspace():
             raise ValidationError('Category name should be atleast 5 Characters')
+
+    @validates('category_description')
+    def validate_category_description(self, category_description):
+        if len(category_description) <= 4 or category_description.isspace():
+            raise ValidationError('Category description should be atleast 5 Characters')
 
 class RecipeSchema(Schema):
     """Schema used for validating Recipes."""
@@ -68,11 +73,22 @@ class RecipeSchema(Schema):
             raise ValidationError('Recipe title should not contain special characters')
         elif len(title) <= 3:
             raise ValidationError('Recipe title should more than 3 characters long')
+        
     
     @validates('category_id')
     def validate_category_id(self, category_id):
         if type(category_id) != int:
             raise ValidationError('Category id should be an interger')
+
+    @validates('steps')
+    def validate_recipe_steps(self, steps):
+        if len(steps) <= 3:
+            raise ValidationError('We need to cook something more that 3 characters')
+
+    @validates('ingredients')
+    def validate_recipe_ingredients(self, ingredients):
+        if len(ingredients) <= 3:
+            raise ValidationError('We need ingredients that are more that 3 characters')
             
         
         
