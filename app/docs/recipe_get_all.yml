@@ -8,3 +8,15 @@ parameters:
     type: string
     required: true
     description: x-access-token
+  - in: query
+    name: q
+    type: string
+    description: search parameter q
+  - in: query
+    name: page
+    type: integer
+    description: page number
+  - in: query
+    name: per_page
+    type: integer
+    description: number of items  per page
