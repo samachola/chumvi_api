@@ -39,7 +39,12 @@ def add_recipe(current_user):
 
     cat_exists = Category.query.filter(Category.id == data['category_id']).filter(Category.user_id == current_user.id).first()
     if cat_exists:
-        my_recipe = Recipe(title=data['title'].lower(), ingredients=data['ingredients'], steps=data['steps'], category_id=data['category_id'], user_id=current_user.id)
+        my_recipe = Recipe(
+            title=data['title'].lower(),
+            ingredients=data['ingredients'],
+            steps=data['steps'],
+            category_id=data['category_id'],
+            user_id=current_user.id)
         my_recipe.save()
 
         return jsonify({'message': 'Successfully added new Recipe', 'status': True, 'recipe': recipe}), 201
@@ -62,31 +67,24 @@ def get_recipes(current_user):
 
     output = []
     try:
-        recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
+        if q:
+            recipes = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.title.ilike('%'+q+'%')).paginate(page = page, per_page = per_page)
+        else:
+            recipes = Recipe.query.filter_by(user_id=current_user.id).paginate(page = page, per_page = per_page)
     except:
         return jsonify({'message': 'The requested URL was not found on the server'}), 404
            
     if not recipes:
-        return jsonify({'message': 'No recipes available'})
-    if q:
-        for recipe in recipes.items: 
-            if q.lower() in recipe.title.lower() or q.lower() in recipe.ingredients.lower() or q.lower() in recipe.steps.lower() :  
-                recipee = {}
-                recipee['id'] = recipe.id
-                recipee['title'] = recipe.title
-                recipee['ingredients'] = recipe.ingredients
-                recipee['steps'] = recipe.steps
-                recipee['category_id'] = recipe.category_id
-                output.append(recipee)
-    else:
-        for recipe in recipes.items: 
-            recipee = {}
-            recipee['id'] = recipe.id
-            recipee['title'] = recipe.title
-            recipee['ingredients'] = recipe.ingredients
-            recipee['steps'] = recipe.steps
-            recipee['category_id'] = recipe.category_id
-            output.append(recipee)
+        return jsonify({'message': 'No recipes available', 'status': False }), 
+
+    for recipe in recipes.items: 
+        recipee = {}
+        recipee['id'] = recipe.id
+        recipee['title'] = recipe.title
+        recipee['ingredients'] = recipe.ingredients
+        recipee['steps'] = recipe.steps
+        recipee['category_id'] = recipe.category_id
+        output.append(recipee)
             
     
     return jsonify({'recipes': output})
