@@ -55,4 +55,13 @@ class AuthTestCase(ApiTestCase):
         data = json.loads(response.data)
         self.assertEqual(response.status_code, 422)
         self.assertEqual(data['message'], 'You provided an incorrect password')
+
+    # def test_reset_password(self):
+    #     """Tests if user can reset password."""
+    #     self.register()
+    #     self.tester.post('/api-v0/auth/register', data=json.dumps({'email': 'sam.achola@live.com', 'username':'achola', 'password': 'Osupp0rt.it'}), content_type='application/json')
+    #     response = self.tester.post('/api-v0/auth/forgot_password', data=json.dumps({'email': 'sam.achola@live.com'}), content_type='application/json')
+    #     data = json.loads(response.data)
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertEqual(data['message'], 'An email with a reset password link has been sent to sam.achola@live.com')
         

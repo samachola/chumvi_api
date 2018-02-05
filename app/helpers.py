@@ -83,3 +83,9 @@ def username_exists(username):
     if username:
         return True
     return False
+def password_match(pwd, cpass):
+    """Helper function that checks if passwords match"""
+    if pwd != cpass:
+        return False
+    return True
+

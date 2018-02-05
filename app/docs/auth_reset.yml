@@ -1,0 +1,25 @@
+Recover Password
+---
+tags:
+  - Auth
+parameters:
+  - in: body
+    name: body
+    required: true
+    type: object
+    description: User Email to reset password
+    schema:
+      id: forgot
+      type: object
+      properties:
+        email:
+          type: string
+          default: sam.achola@live.com
+responses:
+  200:
+    description: Email Sent Successfully
+    schema:
+      properties:
+        token:
+          type: string
+          default: "[token]"
