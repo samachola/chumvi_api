@@ -131,6 +131,9 @@ def update_recipe(current_user, recipe_id):
     my_recipe = Recipe.query.filter(Recipe.user_id == current_user.id).filter(Recipe.id == recipe_id).first()
     if not my_recipe:
         return jsonify({'message': 'Recipe is not available', 'status': False}), 404
+    if recipe_exists(data['title'].lower(), current_user.id):
+        return jsonify({'message': 'Recipe with similar name already exists', 'status': False }), 422
+        
     cat_exists = Category.query.filter(Category.id == data['category_id']).filter(Category.user_id == current_user.id).first()
     if cat_exists:
         my_recipe.title = data['title'].lower()

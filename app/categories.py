@@ -107,6 +107,13 @@ def update_category(current_user, category_id):
     my_category = Category.query.filter(Category.id == category_id).filter(Category.user_id == current_user.id).first()
     if not my_category:
         return jsonify({'message': 'Category does not exist', 'status': False}), 404
+    
+    cat_exists = Category.query.filter(Category.category_name == data['category_name'].lower()).filter(Category.user_id == current_user.id).first()
+    if cat_exists:
+        return jsonify({
+                            'message': 'A category with the same name already exists.',
+                            'status': False
+                       }), 406
 
     my_category.category_name = data['category_name'].lower()
     my_category.category_description = data['category_description']
