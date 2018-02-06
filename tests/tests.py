@@ -1,15 +1,13 @@
+import jwt
+import json
+import unittest
+from werkzeug.datastructures import Headers
 import app
 from app import app, db, models
-import unittest
-import json
-from werkzeug.datastructures import Headers
-import jwt
 
 User = models.User
 Category = models.Category
 Recipe = models.Recipe
-    
-
 class ApiTestCase(unittest.TestCase):  
 
     def setUp(self):
@@ -34,7 +32,7 @@ class ApiTestCase(unittest.TestCase):
         data = json.loads(res.data)
         h = Headers()
         h.add('x-access-token', data['token'])
-        return self.tester.post('/api-v0/category', data=json.dumps({'category_name': 'Breakfast', 'category_description': 'Awesome Breakfast'}), content_type='application/json', headers=h)
+        return self.tester.post('/api-v0/category', data=json.dumps(self.category_data), content_type='application/json', headers=h)
 
     def tearDown(self):
         db.session.remove()
