@@ -2,8 +2,10 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flasgger import Swagger
+from flask_cors import CORS
 
 app = Flask(__name__, instance_relative_config=True)
+CORS(app)
 #load the config file
 app.config.from_object('config')
 db = SQLAlchemy(app)
