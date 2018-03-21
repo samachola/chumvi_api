@@ -31,7 +31,7 @@ def register():
         user, errors = schema.loads(request.data)
     except JSONDecodeError:
         # response for no data/invalid data
-        return jsonify({'error':'Missing keys'}), 422
+        return jsonify({'errors':'Missing keys'}), 422
 
     if errors:
         return make_response(json.dumps({'errors': errors}), 422)
@@ -73,7 +73,9 @@ def login():
                     'status': True}
                 ), 200
 
-    return jsonify({'message': 'You provided an incorrect password'}), 422
+    return jsonify({
+        'errors': { 'password': 'You provided an incorrect password'}, 
+        'message': 'You provided an incorrect password'}), 422
 
 @mod.route('/auth/forgot_password', methods=['POST'])
 @swag_from('docs/auth_reset.yml')

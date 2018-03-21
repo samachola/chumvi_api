@@ -58,7 +58,7 @@ def get_recipes(current_user):
     """
     try:
         page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 10))
+        per_page = int(request.args.get('per_page', 6))
     except:
         return jsonify({'message': 'Ivalid page, per_page parameter'}), 422
     q = str(request.args.get('q','')).lower()
@@ -85,7 +85,7 @@ def get_recipes(current_user):
         output.append(recipee)
             
     
-    return jsonify({'recipes': output})
+    return jsonify({'recipes': output, 'pages': recipes.pages, 'page': recipes.page})
    
 
 
@@ -138,7 +138,7 @@ def update_recipe(current_user, recipe_id):
     if cat_exists:
         my_recipe.title = data['title'].lower()
         my_recipe.ingredients = data['ingredients']
-        my_recipe.step = data['steps']
+        my_recipe.steps = data['steps']
         my_recipe.category_id = data['category_id']
 
         db.session.commit()
