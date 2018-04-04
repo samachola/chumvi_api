@@ -89,7 +89,7 @@ def forgot_password():
 
         msg = Message('Chumvi: Reset password', sender='chumvi.api@gmail.com', recipients=[data['email']])
         # link = url_for('auth.reset_password', token=token, _external=True)
-        link = 'http://localhost:3000/reset_password/{}'.format(token)
+        link = 'https://chumvi-react.herokuapp.com/reset_password/{}'.format(token)
         msg.body = 'Click on the link to reset password {}'.format(link)
                     
         mail.send(msg)       
